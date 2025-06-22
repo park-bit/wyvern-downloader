@@ -1,0 +1,4 @@
+To build the EXE, run the following command in your terminal:
+pip install pyinstaller
+cd into this folder, then run:
+pyinstaller --onefile --windowed main.py
