@@ -1,1 +1,11 @@
-yt-dlp
+yt-dlp>=2024.4.9(https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp)
+ttkbootstrap>=1.10.1 (pip install it....)
+
+in the root folder, run:
+(for windows)
+pyinstaller --noconfirm --onefile --windowed --name "WyverN" --icon=icon.ico --add-data "icon.ico;." --add-data "yt_dlp;yt_dlp" wyvern_downloader.py
+(for linux)
+replace the ; with :
+
+
+use it if u want, if u dont, double it and give it to the next person
