@@ -1,4 +1,17 @@
 To build the EXE, run the following command in your terminal:
+First install PyInstaller:
+
 pip install pyinstaller
-cd into this folder, then run:
-pyinstaller --onefile --windowed main.py
+
+Then run this in your project directory:
+
+pyinstaller --noconfirm --onefile --windowed --name "WyverN" --icon=icon.ico --add-data "icon.ico;." --add-data "yt_dlp;yt_dlp" wyvern_downloader.py
+
+This will create an .exe file inside the dist folder.
+Run the .exe file from dist/wyvern_downloader.exe
+
+
+
+OR
+
+just install a release from the Releases [https://github.com/park-bit/wyvern-downloader/releases/]
