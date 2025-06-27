@@ -31,7 +31,7 @@ It has buttons. You paste a link, choose a format, click download. That’s pret
 
 ---
 
-<img src="https://github.com/user-attachments/assets/9a948c26-8b98-4b39-b557-f6f105e1a3cc" width="120"/>
+<img src="https://github.com/user-attachments/assets/9a948c26-8b98-4b39-b557-f6f105e1a3cc" width="240"/>
 
 
 
