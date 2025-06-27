@@ -8,6 +8,9 @@ import time
 import yt_dlp
 import tkinter as tk
 import webbrowser
+import json
+
+CONFIG_FILE = "wyvern_config.json"
 
 def resource_path(relative_path):
     try:
@@ -15,15 +18,23 @@ def resource_path(relative_path):
     except Exception:
         return os.path.abspath(relative_path)
 
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_config(config):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(config, f)
+
 class DownloadItem(tb.Frame):
-    def __init__(self, master, index, title, fmt, quality, size, cancel_callback, open_callback, pause_callback):
+    def __init__(self, master, index, title, fmt, quality, size, cancel_callback, open_callback, _):
         super().__init__(master, bootstyle="dark")
         self.index = index
         self.cancel_callback = cancel_callback
         self.open_callback = open_callback
-        self.pause_callback = pause_callback
         self.download_path = None
-        self.is_paused = False
 
         self.label = tb.Label(self, text=f"{title} | {fmt} | {quality}", anchor="w")
         self.label.pack(fill=X, padx=5, pady=2)
@@ -39,9 +50,6 @@ class DownloadItem(tb.Frame):
 
         self.cancel_btn = tb.Button(info_frame, text="Cancel", bootstyle="danger-outline", width=8, command=self.cancel_download)
         self.cancel_btn.pack(side=RIGHT, padx=2)
-
-        self.pause_btn = tb.Button(info_frame, text="Pause", bootstyle="warning-outline", width=8, command=self.toggle_pause)
-        self.pause_btn.pack(side=RIGHT, padx=2)
 
         self.open_btn = tb.Button(info_frame, text="Open", bootstyle="success-outline", width=8, command=self.open_file, state=DISABLED)
         self.open_btn.pack(side=RIGHT)
@@ -64,14 +72,10 @@ class DownloadItem(tb.Frame):
     def cancel_download(self):
         self.cancel_callback(self.index)
 
-    def toggle_pause(self):
-        self.is_paused = not self.is_paused
-        self.pause_callback(self.index, self.is_paused)
-        self.pause_btn.configure(text="Resume" if self.is_paused else "Pause")
-
     def open_file(self):
         if self.download_path and os.path.exists(self.download_path):
             self.open_callback(self.download_path)
+
 class WyvernDownloader(tb.Window):
     def __init__(self):
         super().__init__(themename="darkly")
@@ -82,10 +86,11 @@ class WyvernDownloader(tb.Window):
 
         self.queue = []
         self.cancel_flags = {}
-        self.pause_flags = {}
         self.download_items = []
-        self.download_path = None
         self.quality_info = {}
+
+        config = load_config()
+        self.download_path = config.get("download_path")
 
         self.create_widgets()
         self.fade_in()
@@ -131,6 +136,7 @@ class WyvernDownloader(tb.Window):
         self.queue_canvas.pack(side=LEFT, fill=BOTH, expand=True)
         self.queue_canvas.create_window((0, 0), window=self.queue_frame, anchor="nw")
         self.queue_frame.bind("<Configure>", lambda e: self.queue_canvas.configure(scrollregion=self.queue_canvas.bbox("all")))
+
     def update_quality_options(self):
         url = self.url_entry.get().strip()
         if not url:
@@ -188,17 +194,14 @@ class WyvernDownloader(tb.Window):
                     break
 
         index = len(self.queue)
-        item = DownloadItem(
-            self.queue_frame, index, title, fmt, quality,
-            size_str, self.cancel_download, self.open_file, self.toggle_pause
-        )
+        item = DownloadItem(self.queue_frame, index, title, fmt, quality, size_str, self.cancel_download, self.open_file, None)
         item.pack(fill=X, padx=10, pady=5)
 
         self.download_items.append(item)
         self.queue.append((url, title, fmt, quality))
         self.cancel_flags[index] = False
-        self.pause_flags[index] = False
         self.url_entry.delete(0, END)
+
     def cancel_download(self, index):
         self.cancel_flags[index] = True
         item = self.download_items[index]
@@ -209,9 +212,6 @@ class WyvernDownloader(tb.Window):
             except:
                 pass
 
-    def toggle_pause(self, index, is_paused):
-        self.pause_flags[index] = is_paused
-
     def open_file(self, path):
         webbrowser.open(path)
 
@@ -221,6 +221,7 @@ class WyvernDownloader(tb.Window):
             if not self.download_path:
                 messagebox.showerror("No Folder Selected", "Please select a folder to download.")
                 return
+            save_config({"download_path": self.download_path})
 
         for i, (url, title, fmt, quality) in enumerate(self.queue):
             threading.Thread(target=self.download, args=(i, url, fmt, quality)).start()
@@ -243,7 +244,7 @@ class WyvernDownloader(tb.Window):
         outtmpl = os.path.join(self.download_path, "%(title)s.%(ext)s")
         opts = {
             "outtmpl": outtmpl,
-            "format": q_map.get(quality, "bestvideo+bestaudio/best"),
+            "format": "bestaudio/best" if fmt == "mp3" else q_map.get(quality, "bestvideo+bestaudio/best"),
             "merge_output_format": fmt,
             "progress_hooks": [lambda d: self.hook(d, index)],
             "quiet": True,
@@ -270,9 +271,8 @@ class WyvernDownloader(tb.Window):
                 self.download_items[index].set_done(filename)
         except Exception:
             self.download_items[index].set_failed()
+
     def hook(self, d, index):
-        while self.pause_flags.get(index, False):
-            time.sleep(0.1)
         if self.cancel_flags.get(index):
             raise yt_dlp.utils.DownloadCancelled()
         if d['status'] == 'downloading':
