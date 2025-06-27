@@ -21,7 +21,7 @@ It has buttons. You paste a link, choose a format, click download. That’s pret
 - Dynamic quality list updates when a link is typed
 - Optional subtitle download (toggle)
 - Individual download progress bars
-- Pause/resume support per queue item
+- Pause/resume support per queue item(removed in release v2.0.1)
 - Open downloaded file after completion
 - Cancel button for each item
 - Multithreaded queue for parallel downloads
