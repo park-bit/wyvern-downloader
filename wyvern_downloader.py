@@ -251,7 +251,15 @@ class WyvernDownloader(tb.Window):
         }
 
         if fmt == "mp3":
-            opts.update({"extract_audio": True, "audio_format": "mp3"})
+            opts.update({
+                "format": "bestaudio",
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }]
+            })
+
 
         if self.subs_var.get():
             opts.update({
